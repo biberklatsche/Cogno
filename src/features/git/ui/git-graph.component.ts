@@ -19,7 +19,7 @@ import { GitAvatarService } from "../git-avatar.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitGraphColumn, GitViewState } from "../git-view-state.service";
-import { GraphRow, GraphSegment, WipAnchor, WipLink, wipLinks } from "../model/git-graph";
+import { GraphRow, GraphSegment, layoutWips, WipLink, WipSlot } from "../model/git-graph";
 import { GitCommit, GitRefLabel, GitWorktree } from "../model/git-model";
 import { folderName } from "../model/git-parsers";
 import { authorInitials, formatCommitTime, graphColor } from "./git-format";
@@ -50,29 +50,31 @@ type GraphItem = {
   readonly commit: GitCommit;
   readonly row: GraphRow;
   readonly labels: ReadonlyArray<GitRefLabel>;
-  /** The dashed lines from the work in progress rows down to their commits, in this row. */
+  /** The dashed lines of the work in progress rows above, in this row. */
   readonly wipLinks: ReadonlyArray<WipLink>;
 };
 
-/** A work in progress row: the one here, or another worktree's with how many files differ there. */
-type WipRow =
-  | { readonly kind: "wip" }
-  | { readonly kind: "worktree-wip"; readonly worktree: GitWorktree; readonly changes: number };
-
 /**
- * A row of the tree: a commit, or on top the work in progress rows, as
- * GitKraken shows them, with their lane (null when their commit is not
- * loaded) and the dashed lines of the ones above passing by.
+ * A row of the tree: a commit, the own work in progress, or another
+ * worktree's with how many files differ there.
  */
 type TreeRow =
   | GraphItem
-  | (WipRow & { readonly lane: number | null; readonly passing: ReadonlyArray<WipLink> });
+  | { readonly kind: "wip"; readonly graph: WipSlot }
+  | {
+      readonly kind: "worktree-wip";
+      readonly worktree: GitWorktree;
+      readonly changes: number;
+      readonly graph: WipSlot;
+    };
 
 /**
  * The commit graph: one row per commit with its branch and tag labels, the
  * lanes, message, author, date and sha. Only the visible rows are rendered.
  * The "Work in progress" row on top of the tree stands for the working tree
- * while there is something to commit, and scrolls with it.
+ * while there is something to commit, and scrolls with it. Another
+ * worktree's stands right above the commit that worktree is on, as GitKraken
+ * shows it.
  */
 @Component({
   selector: "app-git-graph",
@@ -123,18 +125,22 @@ type TreeRow =
             (pointerdown)="startResize(column, $event, side === 'left' ? -1 : 1)" (pointermove)="resize($event)"
             (pointerup)="endResize($event)" (pointercancel)="endResize($event)" (dblclick)="resetWidth(column)"></span>
     </ng-template>
-    <!-- A work in progress node: the lines of the rows above passing by, its own running down to its commit. -->
+    <!-- A work in progress node: the graph's lines and the dashed ones of other rows passing by, its own running down to its commit. -->
     <ng-template #wipGraph let-wip>
       <span class="col-graph">
         <svg [attr.width]="width('graph')" [attr.height]="rowHeight">
-          @for (link of wip.passing; track $index) {
-            <line [attr.x1]="laneX(link.lane)" y1="0" [attr.x2]="laneX(link.lane)" [attr.y2]="rowHeight" class="wip-link"></line>
+          @for (line of wip.through; track $index) {
+            <line [attr.x1]="laneX(line.lane)" y1="0" [attr.x2]="laneX(line.lane)" [attr.y2]="rowHeight"
+                  [attr.stroke]="color(line.color)" class="lane-line"></line>
           }
-          @if (wip.lane !== null) {
+          @for (lane of wip.passing; track $index) {
+            <line [attr.x1]="laneX(lane)" y1="0" [attr.x2]="laneX(lane)" [attr.y2]="rowHeight" class="wip-link"></line>
+          }
+          @if (wip.linked) {
             <line [attr.x1]="laneX(wip.lane)" [attr.y1]="rowHeight / 2 + avatarRadius - 1" [attr.x2]="laneX(wip.lane)"
                   [attr.y2]="rowHeight" class="wip-link"></line>
           }
-          <circle [attr.cx]="laneX(wip.lane ?? 0)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1" class="wip-node"></circle>
+          <circle [attr.cx]="laneX(wip.lane)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1" class="wip-node"></circle>
         </svg>
       </span>
     </ng-template>
@@ -149,14 +155,14 @@ type TreeRow =
     <cdk-virtual-scroll-viewport class="viewport" [itemSize]="rowHeight" [minBufferPx]="400" [maxBufferPx]="800"
                                  (scrolledIndexChange)="loadMoreNearEnd()">
       <ng-container *cdkVirtualFor="let item of items(); trackBy: trackByRow; templateCacheSize: 0">
-      <!-- The work in progress rows are the first rows of the tree and scroll with it. -->
+      <!-- The own work in progress row is the first row of the tree and scrolls with it. -->
       @if (item.kind === "wip") {
       <div class="columns row wip" [class.selected]="view.selection().kind === 'wip'" (click)="view.select({ kind: 'wip' })">
         @if (visible("refs")) {
           <span class="col-refs"></span>
         }
         @if (visible("graph")) {
-          <ng-container *ngTemplateOutlet="wipGraph; context: { $implicit: item }"></ng-container>
+          <ng-container *ngTemplateOutlet="wipGraph; context: { $implicit: item.graph }"></ng-container>
         }
         @if (conflictText(); as text) {
         <span class="col-message ellipsis wip-conflicts">
@@ -185,7 +191,7 @@ type TreeRow =
           <span class="col-refs"></span>
         }
         @if (visible("graph")) {
-          <ng-container *ngTemplateOutlet="wipGraph; context: { $implicit: item }"></ng-container>
+          <ng-container *ngTemplateOutlet="wipGraph; context: { $implicit: item.graph }"></ng-container>
         }
         <span class="col-message ellipsis">
           <app-icon class="small-icon subtle" name="mdiFolderMultipleOutline"></app-icon>
@@ -234,8 +240,7 @@ type TreeRow =
                 <path [attr.d]="segmentPath(segment)" [attr.stroke]="color(segment.color)"></path>
               }
               @for (link of item.wipLinks; track $index) {
-                <line [attr.x1]="laneX(link.lane)" y1="0" [attr.x2]="laneX(link.lane)"
-                      [attr.y2]="link.end ? rowHeight / 2 : rowHeight" class="wip-link"></line>
+                <path [attr.d]="wipLinkPath(link)" class="wip-link"></path>
               }
               <g [appTooltip]="item.commit.author + ' <' + item.commit.email + '>'">
                 @if (item.commit.parents.length > 1) {
@@ -395,6 +400,7 @@ type TreeRow =
       }
       .wip-node { fill: none; stroke: var(--git-subtle); stroke-width: 2; stroke-dasharray: 3 2; }
       .wip-link { stroke: var(--git-subtle); stroke-width: 2; stroke-dasharray: 3 2; }
+      .lane-line { stroke-width: 2; }
       .wip-count { margin-left: var(--git-gutter); font-style: italic; }
       .wip-conflicts {
         display: flex;
@@ -478,62 +484,82 @@ export class GitGraphComponent {
   });
 
   /**
-   * The rows of the tree. On top the work in progress rows: this worktree's
-   * while it has something to commit, then each other worktree with changes.
-   * Each hangs from its HEAD and sits in that commit's lane, so its dashed
-   * line runs straight.
+   * The rows of the tree. On top this worktree's work in progress while it
+   * has something to commit, hanging from HEAD by a dashed line. Each other
+   * worktree with changes stands right above the commit it is on; one whose
+   * commit is not loaded waits on top, without a line.
    */
   readonly items = computed<TreeRow[]>(() => {
     const rows = this.repository.graph();
     const labels = this.repository.refLabels();
-    const indexBySha = new Map(
-      this.repository.commits().map((commit, index) => [commit.sha, index]),
-    );
-    const anchorOf = (sha: string | null): WipAnchor => {
-      const commitIndex = sha === null ? undefined : indexBySha.get(sha);
-      const lane = commitIndex === undefined ? undefined : rows[commitIndex]?.lane;
-      return commitIndex === undefined || lane === undefined ? null : { commitIndex, lane };
+    const commits = this.repository.commits();
+    const indexBySha = new Map(commits.map((commit, index) => [commit.sha, index]));
+    /** The commit's row, null while it is not loaded. */
+    const indexOf = (sha: string | null): number | null => {
+      const index = sha === null ? undefined : indexBySha.get(sha);
+      return index === undefined || rows[index] === undefined ? null : index;
     };
+    const headIndex = this.view.wipVisible() ? indexOf(this.repository.head().sha) : null;
+    const headLane = headIndex === null ? undefined : rows[headIndex]?.lane;
     const changes = this.repository.worktreeChanges();
-    const wipRows: ReadonlyArray<{ readonly anchor: WipAnchor; readonly row: WipRow }> = [
-      ...(this.view.wipVisible()
-        ? [{ anchor: anchorOf(this.repository.head().sha), row: { kind: "wip" as const } }]
-        : []),
-      ...this.repository.worktrees().flatMap((worktree) => {
-        const count = changes.get(worktree.path);
-        return count === undefined
-          ? []
-          : [
-              {
-                anchor: anchorOf(worktree.head),
-                row: { kind: "worktree-wip" as const, worktree, changes: count },
-              },
-            ];
-      }),
+    const worktreeWips = this.repository.worktrees().flatMap((worktree) => {
+      const count = changes.get(worktree.path);
+      return count === undefined
+        ? []
+        : [{ worktree, changes: count, commitIndex: indexOf(worktree.head) }];
+    });
+    const layout = layoutWips(
+      rows,
+      headIndex,
+      worktreeWips.map((wip) => wip.commitIndex),
+    );
+
+    const top: TreeRow[] = this.view.wipVisible()
+      ? [
+          {
+            kind: "wip",
+            graph: {
+              lane: headLane ?? 0,
+              through: [],
+              passing: [],
+              linked: headLane !== undefined,
+            },
+          },
+        ]
+      : [];
+    const above = new Map<number, TreeRow[]>();
+    worktreeWips.forEach((wip, index) => {
+      const graph = layout.slots[index];
+      if (!graph) return;
+      const row: TreeRow = {
+        kind: "worktree-wip",
+        worktree: wip.worktree,
+        changes: wip.changes,
+        graph,
+      };
+      if (wip.commitIndex === null) top.push(row);
+      else above.set(wip.commitIndex, [...(above.get(wip.commitIndex) ?? []), row]);
+    });
+    return [
+      ...top,
+      ...commits.flatMap((commit, index): TreeRow[] => [
+        ...(above.get(index) ?? []),
+        {
+          kind: "commit",
+          commit,
+          row: rows[index] as GraphRow,
+          labels: labels.get(commit.sha) ?? [],
+          wipLinks: layout.inCommitRows[index] ?? [],
+        },
+      ]),
     ];
-    const links = wipLinks(
-      wipRows.map((wip) => wip.anchor),
-      rows.length,
-    );
-    const wips = wipRows.map(
-      ({ anchor, row }, index): TreeRow => ({
-        ...row,
-        lane: anchor?.lane ?? null,
-        passing: links.inWipRows[index] ?? [],
-      }),
-    );
-    const commits = this.repository.commits().map<TreeRow>((commit, index) => ({
-      kind: "commit",
-      commit,
-      row: rows[index] as GraphRow,
-      labels: labels.get(commit.sha) ?? [],
-      wipLinks: links.inCommitRows[index] ?? [],
-    }));
-    return [...wips, ...commits];
   });
   /** The graph column follows the lanes unless the user dragged it. */
   private readonly graphWidth = computed(() => {
-    const lanes = this.repository.graph().reduce((max, row) => Math.max(max, row.width), 1);
+    const lanes = this.items().reduce(
+      (max, item) => Math.max(max, item.kind === "commit" ? item.row.width : item.graph.lane + 1),
+      1,
+    );
     const visible = Math.min(Math.max(lanes, MIN_GRAPH_LANES), MAX_VISIBLE_LANES);
     return visible * LANE_WIDTH + LANE_WIDTH / 2;
   });
@@ -662,6 +688,13 @@ export class GitGraphComponent {
     if (x1 === x2) return `M ${x1} ${y1} L ${x2} ${y2}`;
     const bend = (y2 - y1) / 2;
     return `M ${x1} ${y1} C ${x1} ${y1 + bend} ${x2} ${y2 - bend} ${x2} ${y2}`;
+  }
+
+  /** Straight through the row, or from the row's top into the commit's node. */
+  wipLinkPath(link: WipLink): string {
+    if (link.end) return this.segmentPath({ half: "top", from: link.from, to: link.to, color: 0 });
+    const x = this.laneX(link.from);
+    return `M ${x} 0 L ${x} ${ROW_HEIGHT}`;
   }
 
   color(index: number): string {

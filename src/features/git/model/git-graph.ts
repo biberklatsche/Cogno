@@ -23,44 +23,93 @@ export type GraphRow = {
 type GraphCommit = { readonly sha: string; readonly parents: ReadonlyArray<string> };
 
 /**
- * A work in progress row on top of the graph: the commit row it hangs from
- * and that row's lane, or null when that commit is not loaded.
+ * A dashed line of a work in progress row in a commit row: passing straight
+ * through (`from === to`), or coming in at the top in lane `from` and ending
+ * in the node in lane `to`.
  */
-export type WipAnchor = { readonly commitIndex: number; readonly lane: number } | null;
+export type WipLink = { readonly from: number; readonly to: number; readonly end: boolean };
 
-/** A dashed line of a work in progress row in a row below it: passing through, or ending in its node. */
-export type WipLink = { readonly lane: number; readonly end: boolean };
+/** What a work in progress row draws in the graph. */
+export type WipSlot = {
+  /** The lane of its node: the commit's when nothing runs there, else the closest free one beside it. */
+  readonly lane: number;
+  /** Whether a dashed line runs down from the node to its commit. */
+  readonly linked: boolean;
+  /** The graph's lines running through the row to the commits below. */
+  readonly through: ReadonlyArray<{ readonly lane: number; readonly color: number }>;
+  /** The lanes of the dashed lines passing by: the own row's from the top, and those of the rows above for the same commit. */
+  readonly passing: ReadonlyArray<number>;
+};
 
 const NO_LINKS: ReadonlyArray<WipLink> = [];
 
 /**
- * The dashed lines from the work in progress rows on top, in their order,
- * down to the commits they hang from: per work in progress row the lines of
- * the ones above that pass it, and per commit row the lines that pass it or
- * end in its node. Each runs straight in the lane of its commit.
+ * Where the work in progress rows go. The own one stays on top of the tree
+ * and hangs from the commit row `headIndex` (null: no such row, or its commit
+ * is not loaded) by a dashed line down that commit's lane. Each other
+ * worktree's (`worktreeIndexes`: the commit row it hangs from) is a row right
+ * above its commit; several of one commit stand side by side, in their order.
+ * One whose commit is not loaded (null) waits on top below the own row,
+ * beside the own line and without one of its own. Returns their slots, as
+ * `worktreeIndexes` lists them, and per commit row the dashed lines in it.
  */
-export function wipLinks(
-  anchors: ReadonlyArray<WipAnchor>,
-  commitCount: number,
+export function layoutWips(
+  rows: ReadonlyArray<GraphRow>,
+  headIndex: number | null,
+  worktreeIndexes: ReadonlyArray<number | null>,
 ): {
-  readonly inWipRows: ReadonlyArray<ReadonlyArray<WipLink>>;
+  readonly slots: ReadonlyArray<WipSlot>;
   readonly inCommitRows: ReadonlyArray<ReadonlyArray<WipLink>>;
 } {
-  const inWipRows = anchors.map((_, row) =>
-    anchors.slice(0, row).flatMap((anchor) => (anchor ? [{ lane: anchor.lane, end: false }] : [])),
-  );
-  // Below the deepest commit a line ends in, the rows share one empty list.
-  const reach = Math.max(-1, ...anchors.map((anchor) => anchor?.commitIndex ?? -1));
-  const inCommitRows = Array.from({ length: commitCount }, (_, index) =>
-    index > reach
-      ? NO_LINKS
-      : anchors.flatMap((anchor) =>
-          anchor && index <= anchor.commitIndex
-            ? [{ lane: anchor.lane, end: index === anchor.commitIndex }]
-            : [],
-        ),
-  );
-  return { inWipRows, inCommitRows };
+  // The rows no line touches share one empty list.
+  const inCommitRows: ReadonlyArray<WipLink>[] = rows.map(() => NO_LINKS);
+  const addLink = (index: number, link: WipLink) => {
+    inCommitRows[index] = [...(inCommitRows[index] ?? []), link];
+  };
+
+  const headLane = headIndex === null ? undefined : rows[headIndex]?.lane;
+  if (headIndex !== null && headLane !== undefined) {
+    for (let index = 0; index <= headIndex; index++) {
+      addLink(index, { from: headLane, to: headLane, end: index === headIndex });
+    }
+  }
+
+  const ownLine = headIndex !== null && headLane !== undefined ? [headLane] : [];
+  const lanesAbove = new Map<number, number[]>();
+  const slots = worktreeIndexes.map((commitIndex): WipSlot => {
+    if (commitIndex === null) {
+      const lane = freeLaneNear(0, new Set(ownLine));
+      return { lane, through: [], passing: ownLine, linked: false };
+    }
+    const row = rows[commitIndex];
+    if (!row) throw new Error(`No commit row ${commitIndex} for a work in progress row`);
+    const through = row.segments
+      .filter((segment) => segment.half === "top")
+      .map((segment) => ({ lane: segment.from, color: segment.color }));
+    const above = lanesAbove.get(commitIndex) ?? [];
+    const ownLinePasses = headIndex !== null && commitIndex <= headIndex;
+    const passing = [...(ownLinePasses ? ownLine : []), ...above];
+    const lane = freeLaneNear(row.lane, new Set([...through.map((line) => line.lane), ...passing]));
+    lanesAbove.set(commitIndex, [...above, lane]);
+    addLink(commitIndex, { from: lane, to: row.lane, end: true });
+    return { lane, through, passing, linked: true };
+  });
+
+  return { slots, inCommitRows };
+}
+
+/**
+ * The free lane closest to `lane`, itself first, then the right one before
+ * the left one: a node stays near its commit, so its line crosses as few
+ * others as possible and it is not pushed out of the column while there is
+ * room on the left.
+ */
+function freeLaneNear(lane: number, occupied: ReadonlySet<number>): number {
+  if (!occupied.has(lane)) return lane;
+  for (let distance = 1; ; distance++) {
+    if (!occupied.has(lane + distance)) return lane + distance;
+    if (lane - distance >= 0 && !occupied.has(lane - distance)) return lane - distance;
+  }
 }
 
 /**
